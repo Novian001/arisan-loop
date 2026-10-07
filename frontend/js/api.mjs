@@ -41,6 +41,12 @@ async function request(method, path, { body } = {}) {
   let payload = null;
   if (text) { try { payload = JSON.parse(text); } catch { payload = { error: text }; } }
   if (!res.ok) {
+    // Static host 404 (HTML, not our JSON): no API backs this deployment at all —
+    // say that honestly instead of echoing the host's raw page. Never "pretend OK":
+    // status 0 keeps the no-API truth, just worded for a human.
+    const isJson = (() => { try { JSON.parse(text); return true; } catch { return false; } })();
+    const localOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(location.origin);
+    if (!isJson && !localOrigin) throw new ApiError(networkHint(), { status: 0 });
     throw new ApiError(payload?.error ?? `HTTP ${res.status}`, {
       status: res.status, detail: payload?.detail ?? null,
     });
