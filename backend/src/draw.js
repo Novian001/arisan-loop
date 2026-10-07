@@ -59,7 +59,9 @@ export function drawPeriod(db, { periodId, actor_id: actorId = null }) {
     // R2 re-checked INSIDE the transaction, not in the HTTP layer. Run before the status
     // guard so §5.7 case 2 surfaces the short-payer's name instead of a bare state error.
     assertReady(db, periodId);
-    if (p.status !== 'ready') {
+    // 'resolved' = default handled, collection complete (§5.4 "+ resolved after default
+    // handling", M6): legal predecessor of drawn in PERIOD_EDGES, so the draw may proceed.
+    if (p.status !== 'ready' && p.status !== 'resolved') {
       const drawn = get(db, 'SELECT id FROM draw_events WHERE period_id = ?', periodId);
       throw conflict(
         drawn
@@ -100,11 +102,13 @@ export function drawPeriod(db, { periodId, actor_id: actorId = null }) {
     ).lastInsertRowid);
 
     // R8 verbatim: must affect exactly 1 row; 0 → conflict → ROLLBACK (no orphan event).
+    // The status predicate pins the state read above ('ready' or 'resolved'), so a
+    // concurrent writer between get() and here still loses the race to version/status.
     const res = run(
       db,
       `UPDATE periods SET status = 'drawn', version = version + 1, drawn_recipient = ?
-       WHERE id = ? AND status = 'ready' AND version = ?`,
-      winnerId, periodId, p.version,
+       WHERE id = ? AND status = ? AND version = ?`,
+      winnerId, periodId, p.status, p.version,
     );
     if (Number(res.changes) !== 1) throw conflict('period was modified concurrently (stale version)');
 

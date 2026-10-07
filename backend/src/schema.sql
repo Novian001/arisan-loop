@@ -135,9 +135,16 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- INV-1 (R3): conservation across a mutable schedule. Money in (paid contribution ledger
--- legs) minus money out (payout legs), minus money parked in not-yet-drawn periods, plus
--- outstanding advances funded later — exactly 0 in every state. Views read only from here.
+-- INV-1 (R3): conservation across a mutable schedule. Money in minus money out, minus money
+-- parked in not-yet-drawn periods — exactly 0 in every state. Views read only from here.
+--
+-- The outstanding-advance term is SUBTRACTIVE on purpose: R4's early payout books the granted
+-- amount as money in (adjustment +a, reason=early_payout_grant) while advances += a, and the
+-- later payout (-a, reason=early_default_payout) clears the claim. Subtracting the still-open
+-- claim cancels the grant, so BOTH writes land on 0 — that is "why the advance term exists".
+-- (R3 prints "+ advances"; read literally against R4's legs the grant would sit at +2a and the
+-- recovery at −2a. test/defaults.test.mjs asserts INV-1 = 0 after the grant, after the
+-- recovery, and at every step between.)
 CREATE VIEW IF NOT EXISTS v_group_inv1 AS
 SELECT
   g.id AS group_id,
@@ -148,11 +155,13 @@ SELECT
       JOIN periods p ON p.id = c.period_id
       WHERE p.group_id = g.id AND c.status = 'paid' AND p.status NOT IN ('drawn','settled')
     ), 0)
-  + COALESCE((SELECT SUM(a.amount) FROM advances a WHERE a.group_id = g.id AND a.status = 'outstanding'), 0)
+  - COALESCE((SELECT SUM(a.amount) FROM advances a WHERE a.group_id = g.id AND a.status = 'outstanding'), 0)
   AS balance
 FROM groups g;
 
--- INV-2 (R10): closure form — everything drawn, no parked collections.
+-- INV-2 (R10): closure form — everything drawn, no parked collections. An unrecovered advance
+-- stays in the sum so a pending early payout blocks closure; R10's "advances = 0" must also be
+-- asserted directly at closure time (M7), since a balance alone cannot prove it.
 CREATE VIEW IF NOT EXISTS v_closure AS
 SELECT
   g.id AS group_id,

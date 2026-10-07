@@ -52,14 +52,76 @@ export function assertReady(db, periodId) {
   return true;
 }
 
+// R4 grant: "Due for P waived into an advance: adjustment(+a, reason=early_payout_grant) +
+// outstanding_advances += a." Lives here because §20 makes ledger.js the only writer of
+// ledger/audit rows — defaults.js orchestrates the case and calls this. Asserts INV-1 before
+// returning: the grant is only balanced because v_group_inv1 subtracts the open claim.
+export function grantAdvance(db, { groupId, periodId, targetPeriodId, memberId, caseId, amount, actorId = null }) {
+  const advId = Number(run(
+    db,
+    `INSERT INTO advances (group_id, member_id, from_period, target_period, amount, status)
+     VALUES (?, ?, ?, ?, ?, 'outstanding')`,
+    groupId, memberId, periodId, targetPeriodId, amount,
+  ).lastInsertRowid);
+  run(
+    db,
+    `INSERT INTO ledger (group_id, period_id, member_id, kind, amount, sign, actor_id, reason, ref)
+     VALUES (?, ?, ?, 'adjustment', ?, 1, ?, 'early_payout_grant', ?)`,
+    groupId, periodId, memberId, amount, actorId, `default_case:${caseId}`,
+  );
+  audit(db, {
+    groupId, entity: 'advance', entityId: advId, action: 'advance_granted', actorId,
+    reason: 'early_payout_grant',
+    payload: { period_id: periodId, target_period_id: targetPeriodId, member_id: memberId, amount },
+  });
+  assertInv1(db, groupId);
+  return get(db, 'SELECT * FROM advances WHERE id = ?', advId);
+}
+
+// R4 recovery: "when the target period collects, payout (-a, kind=early_default_payout)
+// recovers it." Fires whenever an advance's target period has actually collected (resolved /
+// ready / drawn / settled with nothing outstanding) — i.e. from autoReady when a collection
+// completes, and defensively from defaults.js when a target was already collected. One leg +
+// one status flip per advance; grant and recovery are the two halves of the same audited pair
+// (grantAdvance above).
+export function recoverAdvances(db, periodId) {
+  const p = get(db, 'SELECT * FROM periods WHERE id = ?', periodId);
+  if (!p || !['resolved', 'ready', 'drawn', 'settled'].includes(p.status)) return 0;
+  if (shortPayers(db, periodId).length > 0) return 0; // collection not actually complete
+  const open = all(db, "SELECT * FROM advances WHERE target_period = ? AND status = 'outstanding' ORDER BY id", periodId);
+  for (const a of open) {
+    run(
+      db,
+      `INSERT INTO ledger (group_id, period_id, member_id, kind, amount, sign, actor_id, reason, ref)
+       VALUES (?, ?, ?, 'payout', ?, -1, NULL, 'early_default_payout', ?)`,
+      a.group_id, periodId, a.member_id, a.amount, `advance:${a.id}`,
+    );
+    const res = run(
+      db,
+      "UPDATE advances SET status = 'recovered', recovered_at = datetime('now') WHERE id = ? AND status = 'outstanding'",
+      a.id,
+    );
+    if (Number(res.changes) !== 1) throw conflict(`advance ${a.id} was recovered concurrently`);
+    audit(db, {
+      groupId: a.group_id, entity: 'advance', entityId: a.id, action: 'advance_recovered',
+      reason: 'early_default_payout',
+      payload: { period_id: periodId, member_id: a.member_id, amount: a.amount },
+    });
+  }
+  if (open.length > 0) assertInv1(db, p.group_id);
+  return open.length;
+}
+
 // The ONE place that decides a collection is complete (§5.4 step 5): no short payers while
 // `collecting` -> ready. Payment (M3) and a leave waiver (M5) both land here, so readiness
-// can never depend on which write happened to be last. M6 hooks advance recovery off the
-// same moment (R4: "when the target period collects").
+// can never depend on which write happened to be last. Advance recovery (R4) hangs off the
+// same moment: the target period has just collected.
 export function autoReady(db, periodId) {
   const p = get(db, 'SELECT * FROM periods WHERE id = ?', periodId);
   if (!p || p.status !== 'collecting' || shortPayers(db, periodId).length > 0) return p;
-  return transition(db, periodId, 'ready');
+  const ready = transition(db, periodId, 'ready');
+  recoverAdvances(db, periodId);
+  return ready;
 }
 
 // Record one member's payment step for a period. Auto-transitions collecting -> ready
