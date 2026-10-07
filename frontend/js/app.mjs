@@ -192,7 +192,9 @@ function renderConsole() {
   const g = state.overview.group;
   mount($('#console-head'),
     el('h2', { text: g.name }),
-    el('p', {}, `${rp(g.amount)} per period · ${g.frequency} · ${chip(g.status)} · next period: `,
+    el('p', {}, `${rp(g.amount)} per period · ${g.frequency} · `,
+      chip(g.status),
+      ' · next period: ',
       state.overview.next_period
         ? `#${state.overview.next_period.seq} (${state.overview.next_period.status})`
         : 'none — every period is drawn'),
@@ -200,7 +202,9 @@ function renderConsole() {
   renderBalance();
   renderMembers();
   renderPreview(); // a confirmed/cancelled delta must not linger across a refresh
-  renderTimeline($('#timeline'), state.timeline, timelineActions());
+  // timeline API returns {group_id, periods} only — role comes from the session,
+  // without it actions() would treat the organizer as a spectator and drop every button.
+  renderTimeline($('#timeline'), { ...state.timeline, role: state.me.role }, timelineActions());
   renderStatements();
   renderAudit();
 }
