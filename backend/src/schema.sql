@@ -215,6 +215,17 @@ BEGIN
   SELECT RAISE(ABORT, 'append-only table: audit_log cannot be deleted');
 END;
 
+-- M7 defence in depth: a closed group is final (R10 "no partial close"). The app refuses a
+-- re-close with 409 (closure.js); this trigger makes leaving `closed` impossible even for a
+-- raw-SQL writer, same pattern as R8/R12.
+-- ponytail: reopening a group would need this trigger dropped first — add an explicit
+-- `reopen` flow only if the product ever asks for one.
+CREATE TRIGGER IF NOT EXISTS trg_groups_no_reopen BEFORE UPDATE OF status ON groups
+WHEN OLD.status = 'closed' AND NEW.status <> 'closed'
+BEGIN
+  SELECT RAISE(ABORT, 'closed group is immutable: status cannot leave closed');
+END;
+
 -- R8 defence in depth: the same legal-edge matrix as state-machine.js PERIOD_EDGES,
 -- so a raw-SQL writer gets RAISE(ABORT) on any illegal status change (M2 proof test).
 CREATE TRIGGER IF NOT EXISTS trg_periods_illegal_transition BEFORE UPDATE OF status ON periods
