@@ -97,7 +97,9 @@ test('INV views baseline to 0 for a group with no money moved', () => {
 
 test('INV-1 stays 0 as money moves: draw payout cancels the parked collection', () => {
   const { db, gid, mid, pid } = fixture();
-  // simulate the draw payout: period leaves "collecting", payout leg appears
+  // simulate the draw payout: period walks the legal edges out of collection
+  run(db, "UPDATE periods SET status='collecting' WHERE id = ?", pid);
+  run(db, "UPDATE periods SET status='ready' WHERE id = ?", pid);
   run(db, "UPDATE periods SET status='drawn' WHERE id = ?", pid);
   run(db, `INSERT INTO ledger (group_id, period_id, member_id, kind, amount, sign, reason)
            VALUES (?,?,?,'payout',100000,-1,'drawn pot')`, gid, pid, mid);

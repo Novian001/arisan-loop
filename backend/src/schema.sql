@@ -204,9 +204,17 @@ BEGIN
   SELECT RAISE(ABORT, 'append-only table: audit_log cannot be deleted');
 END;
 
--- R8 defence in depth: drawn history is immutable (settled/resolved are leaves).
-CREATE TRIGGER IF NOT EXISTS trg_periods_no_undraw BEFORE UPDATE OF status ON periods
-WHEN OLD.status IN ('drawn','settled')
+-- R8 defence in depth: the same legal-edge matrix as state-machine.js PERIOD_EDGES,
+-- so a raw-SQL writer gets RAISE(ABORT) on any illegal status change (M2 proof test).
+CREATE TRIGGER IF NOT EXISTS trg_periods_illegal_transition BEFORE UPDATE OF status ON periods
+WHEN NEW.status <> OLD.status
+AND NOT (
+     (OLD.status = 'open'      AND NEW.status = 'collecting')
+  OR (OLD.status = 'collecting' AND NEW.status IN ('ready','resolved'))
+  OR (OLD.status = 'ready'      AND NEW.status IN ('drawn','collecting','resolved'))
+  OR (OLD.status = 'resolved'   AND NEW.status IN ('collecting','ready','drawn','settled'))
+  OR (OLD.status = 'drawn'      AND NEW.status IN ('settled','resolved'))
+)
 BEGIN
-  SELECT RAISE(ABORT, 'illegal transition: drawn/settled periods are immutable');
+  SELECT RAISE(ABORT, 'illegal transition: status change refused by period state machine');
 END;
