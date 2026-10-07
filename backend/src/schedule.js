@@ -134,6 +134,30 @@ export function openPeriod(db, periodId, actorId = null) {
   });
 }
 
+// §22 "schedule recompute" + R5/R7: scheduled_recipient for every NOT-YET-DRAWN period
+// follows the current rotation order among the members in scope for that seq (joined on/before,
+// not left after — the same scope openPeriod uses). Drawn periods keep their original slot:
+// the draw record and its rotation view are immutable (R6/R7). Deterministic + idempotent —
+// an untouched group recomputes exactly what createGroup assigned.
+export function recomputeRotation(db, groupId) {
+  const periods = all(db, `
+    SELECT p.id, p.seq, p.scheduled_recipient,
+           (EXISTS(SELECT 1 FROM draw_events d WHERE d.period_id = p.id) OR p.status IN ('drawn','settled')) AS drawn
+    FROM periods p WHERE p.group_id = ? ORDER BY p.seq`, groupId);
+  const members = all(db, `
+    SELECT id, sort_order, joined_seq, left_seq FROM members
+    WHERE group_id = ? AND status <> 'left' ORDER BY sort_order`, groupId);
+  for (const p of periods) {
+    if (p.drawn) continue;
+    const pool = members.filter((m) => (m.joined_seq ?? 1) <= p.seq && (m.left_seq == null || m.left_seq > p.seq));
+    // ponytail: empty pool (every member left) keeps the previous slot; a group with no
+    // members cannot draw anyway. Upgrade: refuse closing instead, once M7 defines it.
+    if (pool.length === 0) continue;
+    const recipient = pool[(p.seq - 1) % pool.length].id;
+    run(db, 'UPDATE periods SET scheduled_recipient = ? WHERE id = ?', recipient, p.id);
+  }
+}
+
 // GET timeline shape (§22): per period state, pot, rotation slot, draw ref (M4 fills draw).
 export function timeline(db, groupId) {
   const g = get(db, 'SELECT * FROM groups WHERE id = ?', groupId);

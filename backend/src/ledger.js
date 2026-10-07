@@ -52,6 +52,16 @@ export function assertReady(db, periodId) {
   return true;
 }
 
+// The ONE place that decides a collection is complete (§5.4 step 5): no short payers while
+// `collecting` -> ready. Payment (M3) and a leave waiver (M5) both land here, so readiness
+// can never depend on which write happened to be last. M6 hooks advance recovery off the
+// same moment (R4: "when the target period collects").
+export function autoReady(db, periodId) {
+  const p = get(db, 'SELECT * FROM periods WHERE id = ?', periodId);
+  if (!p || p.status !== 'collecting' || shortPayers(db, periodId).length > 0) return p;
+  return transition(db, periodId, 'ready');
+}
+
 // Record one member's payment step for a period. Auto-transitions collecting -> ready
 // once every non-waived contribution is `paid` (server-side precondition, §5.4 step 5).
 export function recordContribution(db, { periodId, memberId, status, proof_note: proofNote = null, actor_id: actorId = null }) {
@@ -91,10 +101,8 @@ export function recordContribution(db, { periodId, memberId, status, proof_note:
       payload: { period_id: period.id, member_id: memberId },
     });
 
-    // all non-waived paid? -> ready. One read, one edge, guarded by the state machine.
-    const outstanding = shortPayers(db, period.id).length;
-    let updated = get(db, 'SELECT * FROM periods WHERE id = ?', period.id);
-    if (outstanding === 0) updated = transition(db, period.id, 'ready');
+    // all non-waived paid? -> ready (one read, one edge, via the shared readiness helper)
+    const updated = autoReady(db, period.id);
 
     assertInv1(db, period.group_id);
     return {

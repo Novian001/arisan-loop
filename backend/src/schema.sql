@@ -87,10 +87,12 @@ CREATE TABLE IF NOT EXISTS advances (
   recovered_at TEXT
 );
 
+-- member_id is NULLable: a JOIN preview is written before the member row exists and is
+-- back-filled at confirm (M5). Leave previews always carry their member.
 CREATE TABLE IF NOT EXISTS membership_changes (
   id INTEGER PRIMARY KEY,
   group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE RESTRICT,
-  member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE RESTRICT,
+  member_id INTEGER REFERENCES members(id) ON DELETE RESTRICT,
   kind TEXT NOT NULL CHECK (kind IN ('join','leave')),
   effective_seq INTEGER NOT NULL,
   delta_json TEXT,
