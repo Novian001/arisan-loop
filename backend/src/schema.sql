@@ -14,6 +14,15 @@ CREATE TABLE IF NOT EXISTS groups (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- §5.12 auth: the organizer passphrase lives here as scrypt(salt, hash) — raw passphrase
+-- never persisted (same rule as the draw secret). One row per group, replaced on rotation.
+CREATE TABLE IF NOT EXISTS organizer_auth (
+  group_id INTEGER PRIMARY KEY REFERENCES groups(id) ON DELETE RESTRICT,
+  salt TEXT NOT NULL,
+  hash TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS members (
   id INTEGER PRIMARY KEY,
   group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE RESTRICT,

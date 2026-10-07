@@ -5,6 +5,7 @@ import { tx, get, all, run, bad, notFound } from './db.js';
 import { transition } from './state-machine.js';
 import { assertInv1 } from './invariant.js';
 import { secretCommit } from './secret.js';
+import { audit } from './ledger.js';
 
 const NAME_MAX = 80;
 const MEMBER_NAME_MAX = 60;
@@ -131,6 +132,23 @@ export function openPeriod(db, periodId, actorId = null) {
       due_created: Number(created.changes),
       contributions: all(db, 'SELECT * FROM contributions WHERE period_id = ?', period.id),
     };
+  });
+}
+
+// §22 POST /api/periods/:id/cancel — an all-paid `ready` period goes back to `collecting`
+// (audited, R12). Only `ready` has this edge in PERIOD_EDGES; any other state is a 409 from
+// transition(), so the route cannot invent a path the state machine and its DB trigger ban.
+export function cancelPeriod(db, { periodId, actorId = null }) {
+  return tx(db, () => {
+    const before = get(db, 'SELECT * FROM periods WHERE id = ?', periodId);
+    if (!before) throw notFound(`period ${periodId} not found`);
+    const period = transition(db, periodId, 'collecting');
+    audit(db, {
+      groupId: before.group_id, entity: 'period', entityId: period.id, action: 'cancel_ready',
+      actorId, payload: { from: 'ready', seq: period.seq },
+    });
+    assertInv1(db, before.group_id);
+    return { period };
   });
 }
 
