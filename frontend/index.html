@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ArisanLoop — rotating savings with a provable draw</title>
+  <meta name="description" content="Rotating savings club (arisan) ledger: conservation invariant, reproducible seeded draw anyone can re-verify in the browser.">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <h1>ArisanLoop</h1>
+    <p class="tagline">Rotating savings club — the draw re-verifies itself.</p>
+    <div id="session-bar"></div>
+  </header>
+
+  <main id="main">
+    <div id="alert" class="alert" role="alert" hidden></div>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <!-- 1. Group setup (no auth: creating a group defines its organizer) -->
+    <section id="view-setup" aria-labelledby="h-setup" hidden>
+      <h2 id="h-setup">Start a group</h2>
+      <form id="setup-form">
+        <div class="row">
+          <div>
+            <label for="su-name-group">Group name</label>
+            <input id="su-name-group" name="name" required maxlength="80" placeholder="Kas RT 04">
+          </div>
+          <div>
+            <label for="su-amount">Amount per period (integer rupiah)</label>
+            <input id="su-amount" name="amount" type="number" min="1" step="1" required placeholder="100000">
+          </div>
+          <div>
+            <label for="su-frequency">Frequency</label>
+            <select id="su-frequency" name="frequency">
+              <option value="monthly">monthly</option>
+              <option value="weekly">weekly</option>
+            </select>
+          </div>
+          <div>
+            <label for="su-periods">Periods (blank = one per member)</label>
+            <input id="su-periods" name="period_count" type="number" min="1" max="365" step="1" placeholder="e.g. 12">
+          </div>
+        </div>
+        <div>
+          <label for="su-pass">Organizer passphrase (min 8 chars)</label>
+          <input id="su-pass" name="organizer_passphrase" type="password" minlength="8" maxlength="100"
+                 autocomplete="new-password" placeholder="leave blank to generate once">
+          <p class="hint">Stored hashed (scrypt). A generated passphrase is shown exactly once, right after creation.</p>
+        </div>
+
+        <fieldset>
+          <legend>Members in payout order (2–30) — flag exactly one organizer</legend>
+          <div id="setup-members"></div>
+          <button type="button" id="btn-add-member-row" class="btn secondary small">Add member row</button>
+        </fieldset>
+
+        <button type="submit" class="btn">Create group</button>
+      </form>
+      <div id="setup-result" hidden></div>
+    </section>
+
+    <!-- 2. Sign in: organizer passphrase, or a member token issued by the organizer -->
+    <section id="view-signin" aria-labelledby="h-signin" hidden>
+      <h2 id="h-signin">Sign in</h2>
+      <form id="login-form" aria-label="Organizer sign in">
+        <fieldset>
+          <legend>Organizer</legend>
+          <label for="login-group">Group id</label>
+          <input id="login-group" name="group_id" type="number" min="1" step="1" required>
+          <label for="login-pass">Passphrase</label>
+          <input id="login-pass" name="passphrase" type="password" required autocomplete="current-password">
+          <button type="submit" class="btn">Sign in as organizer</button>
+        </fieldset>
+      </form>
+      <form id="token-form" aria-label="Member sign in with token">
+        <fieldset>
+          <legend>Member (no password — paste the token the organizer issued)</legend>
+          <label for="token-input">Member token</label>
+          <textarea id="token-input" name="token" required placeholder="v1.…"></textarea>
+          <button type="submit" class="btn secondary">Sign in with token</button>
+        </fieldset>
+      </form>
+    </section>
+
+    <!-- 3. Organizer console -->
+    <section id="view-console" aria-labelledby="h-console" hidden>
+      <div id="console-head"></div>
+      <h3 id="h-console">Balance strip</h3>
+      <div id="balance-strip"></div>
+
+      <section aria-labelledby="h-members">
+        <h3 id="h-members">Members</h3>
+        <div id="members-table"></div>
+        <form id="add-member-form" aria-label="Add a member (preview then confirm)">
+          <fieldset>
+            <legend>Add member — previews the delta first, writes only on Confirm</legend>
+            <div class="row">
+              <div>
+                <label for="new-name">Display name</label>
+                <input id="new-name" required maxlength="60">
+              </div>
+              <div>
+                <label for="new-sort">Slot (blank = append)</label>
+                <input id="new-sort" type="number" min="0" step="1" placeholder="e.g. 2">
+              </div>
+              <div>
+                <label for="new-eff">Effective from seq (blank = next undrawn)</label>
+                <input id="new-eff" type="number" min="1" step="1">
+              </div>
+            </div>
+            <button type="submit" class="btn">Preview join delta</button>
+          </fieldset>
+        </form>
+        <div id="proration-preview" hidden></div>
+      </section>
+
+      <section aria-labelledby="h-timeline">
+        <h3 id="h-timeline">Schedule timeline</h3>
+        <div id="timeline"></div>
+      </section>
+
+      <section aria-labelledby="h-verify">
+        <h3 id="h-verify">Draw verification</h3>
+        <div id="verify-panel">
+          <p class="muted">Pick “Verify this draw” on a drawn period — the winner is re-hashed here, in your browser.</p>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-statements">
+        <h3 id="h-statements">Statements &amp; closure</h3>
+        <div id="statements"></div>
+      </section>
+
+      <section id="audit-wrap" aria-labelledby="h-audit" hidden>
+        <h3 id="h-audit">Audit</h3>
+        <div id="audit"></div>
+      </section>
+    </section>
+
+    <!-- 4. Member view (phone-first, own rows only) -->
+    <section id="view-member" aria-labelledby="h-member" hidden></section>
+  </main>
+
+  <footer>
+    Backend runs locally only — <code>cd backend &amp;&amp; npm start</code> (default
+    <code>http://localhost:3000</code>). No API is deployed with this static frontend; the
+    page never fakes data when the server is down.
+  </footer>
+
+  <script type="module" src="/js/app.mjs"></script>
+</body>
+</html>

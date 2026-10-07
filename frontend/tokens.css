@@ -1,0 +1,18 @@
+/* tokens.css — flat, honest density (same shape as the sister projects).
+   Contrast: every text/background pair below is >= 4.5:1; chips >= 3:1 (WCAG AA). */
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --fg: #16202c;          /* 15.8:1 on --surface */
+  --muted: #4a5568;       /* 7.6:1 on --surface */
+  --line: #cbd2dc;
+  --accent: #0b5cad;      /* 6.4:1 on --surface */
+  --accent-fg: #ffffff;
+  --ok-bg: #d9f2e3;  --ok-fg: #0a5c33;     /* 7.4:1 */
+  --warn-bg: #fdeecf; --warn-fg: #6b4400;  /* 7.7:1 */
+  --err-bg: #fbe0de; --err-fg: #8a1a12;    /* 7.6:1 */
+  --info-bg: #dcebfd; --info-fg: #0b3d75;
+  --radius: 6px;
+  --space: 12px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
