@@ -1,0 +1,12 @@
+{
+  "name": "arisan-loop-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ArisanLoop backend: Node 22 + node:sqlite, zero dependencies",
+  "engines": { "node": ">=22.5.0" },
+  "scripts": {
+    "start": "node src/http/server.js",
+    "test": "node --test"
+  }
+}
