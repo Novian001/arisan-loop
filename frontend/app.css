@@ -2,7 +2,7 @@
    Operate-mode shell: top identity bar, one hero strip that answers "where is my
    money right now?", then a dense two-column work area (members / schedule), audit
    below. Domain vocabulary (giliran, pot, iuran, selisih) is emitted by the render
-   layer, not hard-coded here. All interactive targets >= 44px. */
+   layer, not hard-coded here. Touch targets 44px at <=640px (pointer targets 38px+). */
 
 * { box-sizing: border-box; }
 html { font-size: 16px; }
@@ -69,7 +69,7 @@ input, select, textarea {
   color: var(--ink);
 }
 input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid var(--brand); outline-offset: 1px; border-color: var(--brand);
+  border-color: var(--brand);   /* ring itself comes from the global focus rule — one look everywhere */
 }
 textarea { min-height: 4.5rem; resize: vertical; }
 fieldset { border: 1px solid var(--line); border-radius: var(--radius); padding: var(--space); margin: var(--space) 0; }
