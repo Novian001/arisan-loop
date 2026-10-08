@@ -402,3 +402,30 @@ test('no stack traces or internals ever reach the client', async () => {
     assert.equal(typeof e.json?.error, 'string', 'every error carries a human message');
   }
 });
+
+// Visual-structure regression: the P0 of the 2026-10-08 UI audit was #view-console
+// ending up nested inside hidden #view-setup (display:none => whole console invisible
+// while the DOM looked populated). Static markup must stay top-level and balanced.
+test('page structure regression: console is top-level, sections balanced, mobile viewport', async () => {
+  const page = await call('GET', '/');
+  const html = page.text;
+
+  const openCount = (html.match(/<section\b/g) ?? []).length;
+  const closeCount = (html.match(/<\/section>/g) ?? []).length;
+  assert.equal(openCount, closeCount, `unbalanced <section> tags: ${openCount} open vs ${closeCount} close`);
+
+  const setupStart = html.indexOf('<section id="view-setup"');
+  const consoleStart = html.indexOf('<section id="view-console"');
+  assert.ok(setupStart !== -1 && consoleStart !== -1, 'both setup and console sections exist');
+  assert.ok(consoleStart > setupStart, 'console comes after setup');
+  // between setup's open and console's open there must be TWO closes: view-signin's
+  // and view-setup's own. One close = setup was never closed = console nested inside it.
+  const closesBetween = (html.slice(setupStart, consoleStart).match(/<\/section>/g) ?? []).length;
+  assert.ok(closesBetween >= 2,
+    `#view-setup is not closed before #view-console (only ${closesBetween} </section> between them)`);
+
+  assert.match(html, /<meta name="viewport" content="width=device-width/, 'mobile viewport meta');
+  assert.match(html, /<html lang="id">/, 'document language matches the Indonesian UI');
+  assert.match(html, /id="hero"/, 'hero money strip present');
+  assert.match(html, /class="work-grid"/, 'two-column work grid present');
+});
