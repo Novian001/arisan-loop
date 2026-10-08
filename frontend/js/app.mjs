@@ -94,7 +94,7 @@ function renderHero() {
       kpi('Iuran per periode', rp(g.amount), { note: ({ weekly: 'mingguan', monthly: 'bulanan', daily: 'harian' })[g.frequency] ?? g.frequency }),
       kpi('Periode berjalan', next ? `#${next.seq}` : '—', { note: next ? statusLabel(next.status) : 'selesai' }),
       kpi('Terkumpul', rp(b.parked_collected), { cls: 'lead-2', note: 'pot periode berjalan' }),
-      kpi('Selisih buku', String(b.inv1), { note: 'INV-1 — harus nol' }),
+      kpi('Selisih buku', String(b.inv1), { note: 'selisih buku — harus nol' }),
       kpi('Buku seimbang', b.invariant_ok ? '✓ ya' : '✗ tidak', { cls: b.invariant_ok ? 'net-zero' : 'net-bad' }),
     ),
     el('p', { class: 'kpi-note' },
