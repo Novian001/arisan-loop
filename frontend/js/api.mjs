@@ -21,8 +21,8 @@ function networkHint() {
   const local = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
   const start = 'cd backend && npm start  (PORT env, default http://localhost:3000)';
   return local
-    ? `Cannot reach the ArisanLoop backend at ${origin}. It runs locally only — start it with:\n    ${start}\nthen reload this page.`
-    : `Cannot reach the ArisanLoop backend. No API is deployed with this static demo — run it locally:\n    ${start}\nand open http://localhost:3000.`;
+    ? `Server ArisanLoop di ${origin} tidak terjangkau. Backend hanya jalan lokal — nyalakan dengan:\n    ${start}\n lalu muat ulang halaman ini.`
+    : `Server ArisanLoop tidak terjangkau. Tidak ada API yang dideploy bersama frontend statis ini — jalankan lokal:\n    ${start}\n lalu buka http://localhost:3000.`;
 }
 
 async function request(method, path, { body } = {}) {

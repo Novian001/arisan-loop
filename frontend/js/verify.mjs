@@ -18,28 +18,28 @@ export async function recomputeDraw({ seed, algo, inputs }) {
  */
 export async function renderVerify(sel, artifacts, names = {}) {
   const host = typeof sel === 'string' ? document.querySelector(sel) : sel;
-  if (!artifacts) { mount(host, el('p', { class: 'muted', text: 'No draw selected yet.' })); return; }
+  if (!artifacts) { mount(host, el('p', { class: 'muted', text: 'Belum ada undian dipilih.' })); return; }
   const mine = await recomputeDraw(artifacts);
   const match = mine.member_id === artifacts.drawn_recipient;
   const winnerName = (id) => names[id] ?? `member #${id}`;
 
   mount(host,
-    el('p', { class: 'hint', text: 'Stored artifacts below are re-hashed in YOUR browser with Web Crypto — no server trust involved.' }),
+    el('p', { class: 'hint', text: 'Artefak tersimpan di bawah di-hash ulang di BROWSER Anda dengan Web Crypto — tanpa kepercayaan ke server.' }),
     el('dl', { class: 'strip' },
       el('div', {}, el('dt', { text: 'algo' }), el('dd', { class: 'mono', text: artifacts.algo })),
       el('div', {}, el('dt', { text: 'seed (sha256)' }), el('dd', { class: 'mono', text: artifacts.seed })),
-      el('div', {}, el('dt', { text: 'inputs (ordered ids)' }), el('dd', { class: 'mono', text: artifacts.inputs.join(',') })),
+      el('div', {}, el('dt', { text: 'inputs (id urut)' }), el('dd', { class: 'mono', text: artifacts.inputs.join(',') })),
     ),
     el('p', {},
-      el('strong', { text: 'Browser recompute: ' }),
+      el('strong', { text: 'Hitung ulang browser: ' }),
       `index ${mine.index} → ${winnerName(mine.member_id)} (#${mine.member_id})`,
     ),
     el('p', {},
-      el('strong', { text: 'Server draw: ' }),
+      el('strong', { text: 'Hasil server: ' }),
       `${winnerName(artifacts.drawn_recipient)} (#${artifacts.drawn_recipient})`,
     ),
     match
-      ? el('p', {}, chip('good'), ' MATCH — the served winner reproduces from the artifacts alone.')
-      : el('p', { role: 'alert' }, chip('bad'), ' MISMATCH — do NOT trust this draw; artifacts and winner disagree.'),
+      ? el('p', {}, chip('good'), ' COCOK — pemenang server ter-reproduksi dari artefak saja.')
+      : el('p', { role: 'alert' }, chip('bad'), ' TIDAK COCOK — JANGAN percaya undian ini; artefak dan pemenang berbeda.'),
   );
 }

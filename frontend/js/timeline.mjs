@@ -27,7 +27,7 @@ function textField(base, label, props = {}) {
 /** Per-period contribution rows (organizer sees everyone's status; members do not). */
 function contributionsTable(p) {
   if (!p.contributions?.length) return null;
-  return table(`Contributions — period ${p.seq}`, ['Member', 'Amount', 'Status', 'Paid at', 'Proof note'],
+  return table(`Iuran — periode ${p.seq}`, ['Anggota', 'Iuran', 'Status', 'Dibayar', 'Catatan'],
     p.contributions.map((c) => [
       c.display_name, rp(c.amount), chip(c.status), c.paid_at ?? '—', c.proof_note ?? '—',
     ]));
@@ -38,32 +38,32 @@ function actions(p, role, a) {
   const out = [];
   if (p.status === 'open') {
     out.push(el('button', { class: 'btn', type: 'button', onclick: (ev) => a.open(p, ev.currentTarget) },
-      `Open collection (period ${p.seq})`));
+      `Buka iuran (periode ${p.seq})`));
   }
   if (p.status === 'collecting') {
     const members = p.contributions ?? [];
     out.push(el('form', {
-      class: 'row', 'aria-label': `Record a payment for period ${p.seq}`,
+      class: 'row', 'aria-label': `Catat pembayaran periode ${p.seq}`,
       onsubmit: (ev) => { ev.preventDefault(); a.pay(p, ev.submitter); },
     },
-    selectField('pay-member', 'Member', members.map((c) => ({ id: String(c.member_id), display_name: `${c.display_name} — ${c.status}` }))),
+    selectField('pay-member', 'Anggota', members.map((c) => ({ id: String(c.member_id), display_name: `${c.display_name} — ${c.status}` }))),
     selectField('pay-status', 'Status', [
-      { id: 'paid', display_name: 'paid (money in)' }, { id: 'partial', display_name: 'partial' },
-      { id: 'waived', display_name: 'waived' },
+      { id: 'paid', display_name: 'lunas (uang masuk)' }, { id: 'partial', display_name: 'sebagian' },
+      { id: 'waived', display_name: 'dilepas' },
     ]),
-    textField('pay-note', 'Proof of transfer note', { maxlength: '500', placeholder: 'e.g. BCA 1234 → 0812… 10 Mar' }),
-    el('button', { class: 'btn', type: 'submit', text: 'Record' }),
+    textField('pay-note', 'Catatan bukti transfer', { maxlength: '500', placeholder: 'mis. BCA 1234 → 0812… 10 Mar' }),
+    el('button', { class: 'btn', type: 'submit', text: 'Catat' }),
     ));
   }
   if (p.status === 'ready') {
     out.push(el('button', { class: 'btn', type: 'button', onclick: (ev) => a.draw(p, ev.currentTarget) },
-      'Draw winner for this period'),
+      'Undi pemenang periode ini'),
     el('button', { class: 'btn secondary', type: 'button', onclick: (ev) => a.cancel(p, ev.currentTarget) },
-      'Cancel back to collecting'));
+      'Batal, kembali ke kumpul iuran'));
   }
   if (p.status === 'resolved') {
     out.push(el('button', { class: 'btn', type: 'button', onclick: (ev) => a.draw(p, ev.currentTarget) },
-      'Draw winner for this period'));
+      'Undi pemenang periode ini'));
   }
 
   // Defaults: record who missed the payment while collecting, then resolve with reason.
@@ -72,27 +72,27 @@ function actions(p, role, a) {
     const openCases = (p.default_cases ?? []).filter((d) => !d.resolution);
     if (owing.length > 0) {
       out.push(el('form', {
-        class: 'row', 'aria-label': `Record a default for period ${p.seq}`,
+        class: 'row', 'aria-label': `Catat tunggakan periode ${p.seq}`,
         onsubmit: (ev) => { ev.preventDefault(); a.markDefault(p, ev.submitter); },
       },
-      selectField('def-member', 'Member who missed the payment',
+      selectField('def-member', 'Anggota yang belum bayar',
         owing.map((c) => ({ id: String(c.member_id), display_name: `${c.display_name} — ${c.status}` }))),
-      textField('def-reason', 'Reason', { maxlength: '500', placeholder: 'why did they default?' }),
-      el('button', { class: 'btn danger', type: 'submit', text: 'Mark defaulted' }),
+      textField('def-reason', 'Alasan', { maxlength: '500', placeholder: 'kenapa tidak bayar?' }),
+      el('button', { class: 'btn danger', type: 'submit', text: 'Tandai ingkar' }),
       ));
     }
     for (const dc of openCases) {
       out.push(el('form', {
-        class: 'row', 'aria-label': `Resolve default case for ${dc.display_name}`,
+        class: 'row', 'aria-label': `Selesaikan kasus tunggakan ${dc.display_name}`,
         onsubmit: (ev) => { ev.preventDefault(); a.resolveDefault(p, dc, ev.submitter); },
       },
-      el('p', { class: 'muted', text: `Open case: ${dc.display_name} (recorded ${dc.detected_at})` }),
-      selectField('res-path', 'Resolution path', [
-        { id: 'early_payout', display_name: 'early payout — waive now, recover from next period' },
-        { id: 'redistribute', display_name: 'redistribute — waive, shift rotation' },
+      el('p', { class: 'muted', text: `Kasus terbuka: ${dc.display_name} (dicatat ${dc.detected_at})` }),
+      selectField('res-path', 'Jalur penyelesaian', [
+        { id: 'early_payout', display_name: 'bayar lebih awal — lepas sekarang, ganti periode berikutnya' },
+        { id: 'redistribute', display_name: 'redistribusi — lepas, geser rotasi' },
       ]),
-      textField('res-reason', 'Reason (required)', { maxlength: '500' }),
-      el('button', { class: 'btn', type: 'submit', text: 'Resolve case' }),
+      textField('res-reason', 'Alasan (wajib)', { maxlength: '500' }),
+      el('button', { class: 'btn', type: 'submit', text: 'Selesaikan kasus' }),
       ));
     }
   }
@@ -102,40 +102,45 @@ function actions(p, role, a) {
     const eligible = p.contributions.filter((c) => c.member_id !== p.drawn_recipient);
     if (eligible.length > 0) {
       out.push(el('form', {
-        class: 'row', 'aria-label': `Override recipient for period ${p.seq}`,
+        class: 'row', 'aria-label': `Alihkan penerima periode ${p.seq}`,
         onsubmit: (ev) => { ev.preventDefault(); a.override(p, ev.submitter); },
       },
-      selectField('ovr-recipient', 'New recipient (draw record stays provable)', eligible.map((c) => ({ id: String(c.member_id), display_name: c.display_name }))),
-      textField('ovr-reason', 'Reason (required — empty reason is refused)', { maxlength: '500' }),
-      el('button', { class: 'btn danger', type: 'submit', text: 'Override payout' }),
+      selectField('ovr-recipient', 'Penerima baru (rekaman undian tetap terbukti)', eligible.map((c) => ({ id: String(c.member_id), display_name: c.display_name }))),
+      textField('ovr-reason', 'Alasan (wajib — alasan kosong ditolak)', { maxlength: '500' }),
+      el('button', { class: 'btn danger', type: 'submit', text: 'Alihkan payout' }),
       ));
     }
   }
   if (p.draw_event_id) {
     out.push(el('button', { class: 'btn secondary', type: 'button', onclick: () => a.verify(p) },
-      'Verify this draw'));
+      'Verifikasi undian ini'));
   }
   return out.length ? el('div', { class: 'row' }, out) : null;
 }
 
 export function renderTimeline(host, { periods, role }, a) {
-  if (!periods?.length) { mount(host, el('p', { class: 'muted', text: 'No periods yet — create the group first.' })); return; }
+  if (!periods?.length) { mount(host, el('p', { class: 'muted', text: 'Belum ada periode — buat kelompok dulu.' })); return; }
   const nodes = periods.map((p) => {
     const lines = [
-      el('span', { class: 'seq', text: `Period ${p.seq}` }),
+      el('span', { class: 'seq', text: `Periode ${p.seq}` }),
       chip(p.status),
-      el('span', {}, `pot ${rp(p.pot)}`),
-      el('span', { class: 'muted', text: `rotation → ${p.scheduled_name ?? '—'}` }),
     ];
-    if (p.drawn_recipient) {
-      lines.push(el('span', {}, `drawn → ${p.drawn_name ?? `#${p.drawn_recipient}`}`));
-      if (p.has_override) lines.push(chip('bad'), el('span', { class: 'muted', text: '(overridden — see audit)' }));
-    }
+    const potLine = el('div', { class: 'pot-row' },
+      el('span', {}, 'Pot: ', el('b', { text: rp(p.pot) })),
+      el('span', {}, 'Giliran: ', el('b', { text: p.scheduled_name ?? '—' })),
+      p.drawn_recipient
+        ? el('span', {}, 'Terundi → ', el('b', { text: p.drawn_name ?? `#${p.drawn_recipient}` }))
+        : null,
+      p.has_override ? el('span', { class: 'badge', text: '⚠ override — lihat audit' }) : null,
+      role === 'organizer' && p.due_count
+        ? el('span', { class: 'muted', text: `${p.paid_count}/${p.due_count} lunas` })
+        : null,
+    );
     if (p.seed_fragment) lines.push(el('span', { class: 'mono muted', text: `seed ${p.seed_fragment}…` }));
-    if (role === 'organizer') lines.push(el('span', { class: 'muted', text: `${p.paid_count}/${p.due_count} paid` }));
 
-    return el('article', { class: 'period', 'aria-label': `Period ${p.seq}` },
+    return el('article', { class: 'period', 'aria-label': `Periode ${p.seq}` },
       el('div', { class: 'period-head' }, lines),
+      potLine,
       contributionsTable(p),
       actions(p, role, a),
     );

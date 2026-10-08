@@ -29,22 +29,48 @@ export const rp = (n) => `Rp\u2009${Number(n ?? 0).toLocaleString('id-ID')}`;
 
 // State chips carry a symbol AND text — colour is never the only signal (§5.11 a11y).
 const CHIP = {
-  open: ['○', 'open'], collecting: ['◔', 'collecting'], ready: ['●', 'ready'],
-  drawn: ['✔', 'drawn'], settled: ['✔', 'settled'], resolved: ['◑', 'resolved'],
-  active: ['●', 'active'], left: ['○', 'left'], defaulted: ['▲', 'defaulted'],
-  due: ['○', 'due'], partial: ['◐', 'partial'], paid: ['✔', 'paid'], waived: ['–', 'waived'],
-  closed: ['■', 'closed'], open_case: ['▲', 'case open'],
+  open: ['○', 'pendaftaran'], collecting: ['◔', 'kumpul iuran'], ready: ['●', 'siap undian'],
+  drawn: ['✔', 'diundi'], settled: ['✔', 'selesai'], resolved: ['◑', 'beres'],
+  active: ['●', 'aktif'], left: ['○', 'keluar'], defaulted: ['▲', 'ingkar'],
+  due: ['○', 'belum bayar'], partial: ['◐', 'sebagian'], paid: ['✔', 'lunas'], waived: ['–', 'dilepas'],
+  closed: ['■', 'ditutup'], open_case: ['▲', 'kasus terbuka'],
 };
+export const statusLabel = (s) => (CHIP[s] ?? ['•', s])[1];
 export function chip(status) {
   const [sym, label] = CHIP[status] ?? ['•', status];
   return el('span', { class: `chip ${status}`, text: `${sym} ${label}` });
 }
 
-export function table(caption, headers, rows) {
+/** Labeled chip — the state + a short human gloss under one roof (member view). */
+export function chipWithNote(status, note) {
+  return el('span', { class: 'chip-note' }, chip(status), el('small', { text: note }));
+}
+
+/** KPIs with a named metric + optional value class for the lead/amber emphasis. */
+export function kpi(label, value, { cls = '', note = null } = {}) {
+  return el('div', {},
+    el('dt', { text: label }),
+    el('dd', { class: cls, text: value }),
+    note ? el('span', { class: 'tag', text: note }) : null,
+  );
+}
+
+/** Empty-state paragraph that always says WHY — never a naked "none". */
+export function emptyState(text) {
+  return el('p', { class: 'muted empty-state', text });
+}
+
+/** A district label + journal heading — caption syntax reused across tables. */
+export function table(caption, headers, rows, opts = {}) {
   const thead = el('thead', {}, el('tr', {}, headers.map(
     (h) => el('th', { scope: 'col', class: h.num ? 'num' : null }, h.label ?? h),
   )));
   const tbody = el('tbody', {}, rows.map((r) => el('tr', {}, r.map((c, i) =>
     el('td', { class: headers[i]?.num ? 'num' : null }, c)))));
-  return el('div', { class: 'table-wrap' }, el('table', {}, el('caption', { text: caption }), thead, tbody));
+  if (opts.noCaption !== true) {
+    return el('div', { class: 'table-wrap' }, el('table', {}, el('caption', { text: caption }), thead, tbody));
+  }
+  const tableEl = el('table', {}, thead, tbody);
+  if (opts.compact) tableEl.setAttribute('aria-label', caption);
+  return el('div', { class: 'table-wrap' }, tableEl);
 }
