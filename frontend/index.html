@@ -1,20 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ArisanLoop — rotating savings with a provable draw</title>
-  <meta name="description" content="Rotating savings club (arisan) ledger: conservation invariant, reproducible seeded draw anyone can re-verify in the browser.">
+  <title>ArisanLoop — arisan berputar dengan undian yang bisa dibuktikan</title>
+  <meta name="description" content="Buku arisan: simpanan berputar, jejak uang konservatif, undian ber-seed yang bisa dihitung ulang siapa pun di browser.">
   <link rel="stylesheet" href="/tokens.css">
   <link rel="stylesheet" href="/app.css">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">Langsung ke isi</a>
 
   <header class="topbar">
-    <h1>ArisanLoop</h1>
-    <p class="tagline">Rotating savings club — the draw re-verifies itself.</p>
-    <div id="session-bar"></div>
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">⌂</span>
+        <div>
+          <h1>ArisanLoop</h1>
+          <p class="tagline">Arisan berputar — undian bisa dihitung ulang sendiri.</p>
+        </div>
+      </div>
+      <div id="session-bar"></div>
+    </div>
   </header>
 
   <main id="main">
@@ -23,116 +30,123 @@
 
     <!-- 1. Group setup (no auth: creating a group defines its organizer) -->
     <section id="view-setup" aria-labelledby="h-setup" hidden>
-      <h2 id="h-setup">Start a group</h2>
-      <form id="setup-form">
+      <div class="setup-grid">
+      <div>
+      <h2 id="h-setup">Buat kelompok</h2>
+      <form id="setup-form" class="panel">
         <div class="row">
           <div>
-            <label for="su-name-group">Group name</label>
+            <label for="su-name-group">Nama kelompok</label>
             <input id="su-name-group" name="name" required maxlength="80" placeholder="Kas RT 04">
           </div>
           <div>
-            <label for="su-amount">Amount per period (integer rupiah)</label>
+            <label for="su-amount">Iuran per periode (rupiah, bilangan bulat)</label>
             <input id="su-amount" name="amount" type="number" min="1" step="1" required placeholder="100000">
           </div>
           <div>
-            <label for="su-frequency">Frequency</label>
+            <label for="su-frequency">Periode</label>
             <select id="su-frequency" name="frequency">
-              <option value="monthly">monthly</option>
-              <option value="weekly">weekly</option>
+              <option value="monthly">bulanan</option>
+              <option value="weekly">mingguan</option>
             </select>
           </div>
           <div>
-            <label for="su-periods">Periods (blank = one per member)</label>
-            <input id="su-periods" name="period_count" type="number" min="1" max="365" step="1" placeholder="e.g. 12">
+            <label for="su-periods">Jumlah periode (kosong = satu per anggota)</label>
+            <input id="su-periods" name="period_count" type="number" min="1" max="365" step="1" placeholder="mis. 12">
           </div>
         </div>
         <div>
-          <label for="su-pass">Organizer passphrase (min 8 chars)</label>
+          <label for="su-pass">Passphrase organizer (min 8 karakter)</label>
           <input id="su-pass" name="organizer_passphrase" type="password" minlength="8" maxlength="100"
-                 autocomplete="new-password" placeholder="leave blank to generate once">
-          <p class="hint">Stored hashed (scrypt). A generated passphrase is shown exactly once, right after creation.</p>
+                 autocomplete="new-password" placeholder="kosongkan untuk digenerate sekali">
+          <p class="hint">Disimpan ter-hash (scrypt). Passphrase hasil generate ditampilkan tepat satu kali, langsung setelah pembuatan.</p>
         </div>
 
         <fieldset>
-          <legend>Members in payout order (2–30) — flag exactly one organizer</legend>
+          <legend>Anggota sesuai urutan giliran (2–30) — tandai tepat satu organizer</legend>
           <div id="setup-members"></div>
-          <button type="button" id="btn-add-member-row" class="btn secondary small">Add member row</button>
+          <button type="button" id="btn-add-member-row" class="btn secondary small">Tambah baris anggota</button>
         </fieldset>
 
-        <button type="submit" class="btn">Create group</button>
+        <button type="submit" class="btn">Buat kelompok</button>
       </form>
       <div id="setup-result" hidden></div>
-    </section>
+      </div>
 
     <!-- 2. Sign in: organizer passphrase, or a member token issued by the organizer -->
     <section id="view-signin" aria-labelledby="h-signin" hidden>
-      <h2 id="h-signin">Sign in</h2>
-      <form id="login-form" aria-label="Organizer sign in">
+      <div class="panel login-panel">
+      <h2 id="h-signin">Masuk</h2>
+      <form id="login-form" aria-label="Masuk sebagai organizer">
         <fieldset>
           <legend>Organizer</legend>
-          <label for="login-group">Group id</label>
+          <label for="login-group">ID kelompok</label>
           <input id="login-group" name="group_id" type="number" min="1" step="1" required>
           <label for="login-pass">Passphrase</label>
           <input id="login-pass" name="passphrase" type="password" required autocomplete="current-password">
-          <button type="submit" class="btn">Sign in as organizer</button>
+          <button type="submit" class="btn">Masuk sebagai organizer</button>
         </fieldset>
       </form>
-      <form id="token-form" aria-label="Member sign in with token">
+      <form id="token-form" aria-label="Masuk sebagai anggota dengan token">
         <fieldset>
-          <legend>Member (no password — paste the token the organizer issued)</legend>
-          <label for="token-input">Member token</label>
+          <legend>Anggota (tanpa password — tempel token dari organizer)</legend>
+          <label for="token-input">Token anggota</label>
           <textarea id="token-input" name="token" required placeholder="v1.…"></textarea>
-          <button type="submit" class="btn secondary">Sign in with token</button>
+          <button type="submit" class="btn secondary">Masuk dengan token</button>
         </fieldset>
       </form>
+      </div>
+    </section>
+    </div>
     </section>
 
     <!-- 3. Organizer console -->
     <section id="view-console" aria-labelledby="h-console" hidden>
       <div id="console-head"></div>
-      <h3 id="h-console">Balance strip</h3>
-      <div id="balance-strip"></div>
+      <div id="hero"></div>
 
+      <div class="work-grid">
       <section aria-labelledby="h-members">
-        <h3 id="h-members">Members</h3>
+        <h3 id="h-members">Anggota</h3>
         <div id="members-table"></div>
-        <form id="add-member-form" aria-label="Add a member (preview then confirm)">
+        <form id="add-member-form" aria-label="Tambah anggota (pratinjau lalu konfirmasi)">
           <fieldset>
-            <legend>Add member — previews the delta first, writes only on Confirm</legend>
+            <legend>Tambah anggota — delta dipratinjau dulu, tersimpan hanya saat Konfirmasi</legend>
             <div class="row">
               <div>
-                <label for="new-name">Display name</label>
+                <label for="new-name">Nama panggilan</label>
                 <input id="new-name" required maxlength="60">
               </div>
               <div>
-                <label for="new-sort">Slot (blank = append)</label>
-                <input id="new-sort" type="number" min="0" step="1" placeholder="e.g. 2">
+                <label for="new-sort">Slot (kosong = tambah di akhir)</label>
+                <input id="new-sort" type="number" min="0" step="1" placeholder="mis. 2">
               </div>
               <div>
-                <label for="new-eff">Effective from seq (blank = next undrawn)</label>
+                <label for="new-eff">Berlaku dari seq (kosong = undian berikutnya)</label>
                 <input id="new-eff" type="number" min="1" step="1">
               </div>
             </div>
-            <button type="submit" class="btn">Preview join delta</button>
+            <button type="submit" class="btn">Pratinjau delta gabung</button>
           </fieldset>
         </form>
         <div id="proration-preview" hidden></div>
       </section>
 
-      <section aria-labelledby="h-timeline">
-        <h3 id="h-timeline">Schedule timeline</h3>
+      <section id="timeline-wrap" aria-labelledby="h-timeline">
+        <h3 id="h-timeline">Alur periode</h3>
         <div id="timeline"></div>
       </section>
+      </div>
 
       <section aria-labelledby="h-verify">
-        <h3 id="h-verify">Draw verification</h3>
+        <h3 id="h-verify">Verifikasi undian</h3>
         <div id="verify-panel">
-          <p class="muted">Pick “Verify this draw” on a drawn period — the winner is re-hashed here, in your browser.</p>
+          <p class="muted">Pilih “Verifikasi undian ini” pada periode yang sudah diundi — pemenang di-hash ulang di sini, di browser Anda.</p>
         </div>
       </section>
 
       <section aria-labelledby="h-statements">
-        <h3 id="h-statements">Statements &amp; closure</h3>
+        <h3 id="h-statements">Buku kas &amp; penutupan</h3>
         <div id="statements"></div>
       </section>
 
@@ -146,10 +160,10 @@
     <section id="view-member" aria-labelledby="h-member" hidden></section>
   </main>
 
-  <footer>
-    Backend runs locally only — <code>cd backend &amp;&amp; npm start</code> (default
-    <code>http://localhost:3000</code>). No API is deployed with this static frontend; the
-    page never fakes data when the server is down.
+  <footer class="page-foot">
+    Backend berjalan lokal saja — <code>cd backend &amp;&amp; npm start</code> (default
+    <code>http://localhost:3000</code>). Tidak ada API yang dideploy bersama frontend statis ini; halaman
+    tidak pernah mengarang data saat server mati.
   </footer>
 
   <script type="module" src="/js/app.mjs"></script>
