@@ -37,7 +37,8 @@ export function renderMemberView(host, { me, overview, statement, periods, names
       ? table('Iuran saya — satu baris per periode', ['Periode', 'Iuran', 'Status', 'Dibayar', 'Catatan'],
         myRows.map((c) => [`#${c.seq}`, rp(c.amount),
           chipWithNote(c.status, STATUS_NOTE[c.status] ?? ''),
-          c.paid_at ?? '—', c.proof_note ?? '—']))
+          c.paid_at ? el('span', { class: 'ts', text: c.paid_at.slice(0, 16) }) : '—',
+          c.proof_note ?? '—']))
       : emptyState('Belum ada baris iuran — tunggu bendahara membuka periode pertama.'),
 
     el('h3', { text: 'Giliran saya' }),

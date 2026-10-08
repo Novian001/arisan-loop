@@ -29,7 +29,9 @@ function contributionsTable(p) {
   if (!p.contributions?.length) return null;
   return table(`Iuran — periode ${p.seq}`, ['Anggota', 'Iuran', 'Status', 'Dibayar', 'Catatan'],
     p.contributions.map((c) => [
-      c.display_name, rp(c.amount), chip(c.status), c.paid_at ?? '—', c.proof_note ?? '—',
+      c.display_name, rp(c.amount), chip(c.status),
+      c.paid_at ? el('span', { class: 'ts', text: c.paid_at.slice(0, 16) }) : '—',
+      c.proof_note ?? '—',
     ]));
 }
 
