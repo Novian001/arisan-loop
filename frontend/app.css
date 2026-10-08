@@ -76,7 +76,7 @@ fieldset { border: 1px solid var(--line); border-radius: var(--radius); padding:
 legend { font-weight: 700; padding: 0 8px; font-size: .92rem; }
 .hint { color: var(--muted); font-size: .88rem; margin: 3px 0 0; }
 .row { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: end; }
-.row > div { flex: 1 1 10rem; min-width: 0; }
+.row > div { flex: 1 1 16rem; min-width: 0; }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -167,18 +167,21 @@ caption { text-align: left; padding: 12px 14px 4px; font-weight: 700; font-size:
 th, td { text-align: left; padding: 9px 11px; border-top: 1px solid var(--line); vertical-align: top; }
 th { background: var(--surface-2); font-size: .85rem; letter-spacing: .01em; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ts { white-space: nowrap; font-variant-numeric: tabular-nums; font-size: .84rem; }
 tbody tr:nth-child(even) { background: var(--surface-2); }
 tbody tr:hover { background: var(--accent-soft); }
 
 /* ---------- kpi hero strip ---------- */
 .hero { margin: var(--space) 0; }
 .hero .strip { margin: 0 0 6px; }
-.kpi-note { color: var(--faint); font-size: .82rem; }
 
 /* ---------- work grid (organizer console) ---------- */
+/* minmax(0, …) on every track: a plain 1fr = minmax(auto,1fr) lets a table's
+   min-content (28rem) inflate the track past the viewport (P0 of QA round 1). */
 .work-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--space); align-items: start; margin-top: var(--space-sm); }
+.work-grid > section { min-width: 0; }
 @media (max-width: 1080px) {
-  .work-grid { grid-template-columns: 1fr; }
+  .work-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ---------- kpi hero strip ---------- */
@@ -191,9 +194,9 @@ tbody tr:hover { background: var(--accent-soft); }
 .strip dt { color: var(--muted); font-size: .82rem; font-weight: 600; margin-bottom: 4px; }
 .strip dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 .strip dd.lead { color: var(--brand-deep); font-size: 1.18rem; }
-.strip dd.lead-2 { color: var(--accent); }
+.strip dd.lead-2 { color: var(--accent); font-size: 1.18rem; }
 .strip .tag { font-weight: 500; font-size: .78rem; color: var(--muted); letter-spacing: .02em; }
-.kpi-note { color: var(--muted); font-size: .85rem; margin: 8px 0 0; }
+.kpi-note { color: var(--muted); font-size: .85rem; margin: 12px 0 0; }
 
 /* ---------- page skeleton ---------- */
 .skeleton {
@@ -249,6 +252,22 @@ details summary { cursor: pointer; font-weight: 700; min-height: 44px; display: 
      row order already carries the rotation, status+aksi carry the phone job */
   #members-table table th:nth-child(3), #members-table table td:nth-child(3),
   #members-table table th:nth-child(4), #members-table table td:nth-child(4) { display: none; }
+  /* member payments table: Catatan (proof note) is desktop detail — phone keeps
+     Periode / Iuran / Status / Dibayar INSIDE the viewport (no scroll): drop the
+     28rem min-width and the chip gloss, the chip label already carries status */
+  #view-member table th:nth-child(5), #view-member table td:nth-child(5) { display: none; }
+  #view-member table { min-width: 0; table-layout: fixed; }
+  #view-member .chip-note small { display: none; }
+  /* fixed columns sized for 390: date/time breaks date over time instead of overflowing */
+  #view-member table th:nth-child(1) { width: 20%; }
+  #view-member table th:nth-child(2) { width: 26%; }
+  #view-member table th:nth-child(3) { width: 28%; }
+  #view-member table th:nth-child(4) { width: 26%; }
+  #view-member table th { font-size: .78rem; padding-left: 8px; padding-right: 6px; }
+  #view-member .ts { font-size: .72rem; white-space: normal; }
+  #view-member td { overflow-wrap: anywhere; }
+  /* phone forms: one field per line, no 2-up cram */
+  .row > div { flex-basis: 100%; }
   .metric-list { grid-template-columns: 1fr; }
   .topbar-inner { padding: var(--space-sm) 12px; }
   main { padding: var(--space-sm) 12px 2rem; }
