@@ -1,18 +1,41 @@
-/* tokens.css — flat, honest density (same shape as the sister projects).
-   Contrast: every text/background pair below is >= 4.5:1; chips >= 3:1 (WCAG AA). */
+/* tokens.css — ArisanLoop visual system v2.
+   World: "buku kas" — a well-run bendahara's ledger, warm paper ground, money-green
+   primary, amber for the collection moment. Operate mode: colour does real jobs
+   (state, money, attention), never decoration.
+   Contrast: every text/background pair >= 4.5:1; state chips >= 3:1 (WCAG AA). */
 :root {
-  --bg: #f5f7fa;
-  --surface: #ffffff;
-  --fg: #16202c;          /* 15.8:1 on --surface */
-  --muted: #4a5568;       /* 7.6:1 on --surface */
-  --line: #cbd2dc;
-  --accent: #0b5cad;      /* 6.4:1 on --surface */
-  --accent-fg: #ffffff;
-  --ok-bg: #d9f2e3;  --ok-fg: #0a5c33;     /* 7.4:1 */
-  --warn-bg: #fdeecf; --warn-fg: #6b4400;  /* 7.7:1 */
-  --err-bg: #fbe0de; --err-fg: #8a1a12;    /* 7.6:1 */
-  --info-bg: #dcebfd; --info-fg: #0b3d75;
-  --radius: 6px;
-  --space: 12px;
+  /* grounds — quiet green-grey paper: ties to the money-green brand, deliberately
+     NOT the cream "tasteful AI" default (impeccable: cream-palette slop) */
+  --paper:      #eff2ee;   /* page ground */
+  --surface:    #ffffff;   /* card surface */
+  --surface-2:  #f6f8f5;   /* inset / table header / zebra */
+  --ink:        #1d2b26;   /* primary text — deep green-black, 13:1 on paper */
+  --muted:      #5d6b64;   /* secondary text, 5:1 on paper */
+  --faint:      #636e67;   /* tertiary — 4.7:1 on paper */
+  --line:       #dde3db;   /* hairline */
+  --line-strong:#c2cabe;   /* strong border / input edge */
+
+  /* brand */
+  --brand:      #0c6b4f;   /* money green — primary 6.9:1 on surface */
+  --brand-deep: #085a41;   /* hover/press */
+  --brand-fg:   #ffffff;
+  --accent:     #b7791f;   /* amber — collecting / pot / giliran moment */
+  --accent-soft:#fbeed7;
+
+  /* semantic states (chips >= 3:1, text on bg >= 4.5:1) */
+  --ok-bg:   #dcefe3;  --ok-fg:   #0b5640;
+  --warn-bg: #fbeed6;  --warn-fg: #78490a;
+  --err-bg:  #f8e1dc;  --err-fg:  #8c2a1c;
+  --info-bg: #e2ecf4;  --info-fg: #1d4a70;
+  --neutral: #57645d;  --neutral-bg: #e9e4da;   /* 4.89:1 on neutral-bg */
+
+  /* shape + space + depth */
+  --radius:    10px;
+  --radius-sm: 7px;
+  --space:     16px;
+  --space-sm:  10px;
+  --shadow-1:  0 1px 2px rgba(29, 43, 38, .05);
+  --shadow-2:  0 2px 10px rgba(29, 43, 38, .07);
+
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
