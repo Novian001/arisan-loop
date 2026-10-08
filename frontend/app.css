@@ -193,8 +193,9 @@ tbody tr:hover { background: var(--accent-soft); }
 .strip > div { background: var(--surface); padding: 14px 16px 12px; min-width: 0; }
 .strip dt { color: var(--muted); font-size: .82rem; font-weight: 600; margin-bottom: 4px; }
 .strip dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
-.strip dd.lead { color: var(--brand-deep); font-size: 1.18rem; }
-.strip dd.lead-2 { color: var(--accent); font-size: 1.18rem; }
+/* 1.25rem bold: money values clear WCAG large-text (14pt bold = 18.66px) -> 3:1, amber 3.64 passes */
+.strip dd.lead { color: var(--brand-deep); font-size: 1.25rem; }
+.strip dd.lead-2 { color: var(--accent); font-size: 1.25rem; }
 .strip .tag { font-weight: 500; font-size: .78rem; color: var(--muted); letter-spacing: .02em; }
 .kpi-note { color: var(--muted); font-size: .85rem; margin: 12px 0 0; }
 
