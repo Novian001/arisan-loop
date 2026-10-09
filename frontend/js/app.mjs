@@ -13,7 +13,7 @@ const $ = (sel) => document.querySelector(sel);
 const state = { me: null, overview: null, timeline: null, audit: null, statement: null, lastToken: null, preview: null };
 
 // ---------------------------------------------------------------- status & errors
-function showStatus(msg) { $('#status').textContent = msg ?? ''; }
+function showStatus(msg) { $('#status').textContent = msg ?? ''; $('#status').setAttribute('aria-live', 'polite'); }
 function showError(e) { const box = $('#alert'); box.textContent = describeError(e); box.hidden = false; }
 function clearError() { const box = $('#alert'); box.hidden = true; box.textContent = ''; }
 function localError(msg) { showError(new ApiError(msg, { status: 400 })); }
@@ -93,7 +93,7 @@ function renderHero() {
       kpi('Total anggota', String(active), { cls: 'lead', note: `${members.length} terdaftar` }),
       kpi('Iuran per periode', rp(g.amount), { note: ({ weekly: 'mingguan', monthly: 'bulanan', daily: 'harian' })[g.frequency] ?? g.frequency }),
       kpi('Periode berjalan', next ? `#${next.seq}` : '—', { note: next ? statusLabel(next.status) : 'selesai' }),
-      kpi('Terkumpul', rp(b.parked_collected), { cls: 'lead-2', note: 'pot periode berjalan' }),
+      kpi('Terkumpul', rp(b.parked_collected), { cls: 'lead-2', note: 'Uang terkumpul di pot periode berjalan' }),
       kpi('Selisih buku', String(b.inv1), { note: 'selisih buku — harus nol' }),
       kpi('Buku seimbang', b.invariant_ok ? '✓ ya' : '✗ tidak', { cls: b.invariant_ok ? 'net-zero' : 'net-bad' }),
     ),
